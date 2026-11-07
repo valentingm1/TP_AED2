@@ -5,6 +5,20 @@ public class AirMiles implements SistemaAirMiles {
     //Los usuarios es un ABB para agregarlos, con un heap para tenerlos en orden?
     //las promocioes son ???
     //seria conveniente guardar a los mas acumuladores y canjeadores como un atributo aparte? considerando que nos piden complejidad 1 por lo que no los podemos busacar en un arbol
+    
+    // final para no crear otro heap ni modificarlo
+    private final MaxHeap<Node> ranking = new MaxHeap<>((a, b) -> {
+        // La lambda compara usuarios ya disponibles
+        int orden = Double.compare(saldo(a), saldo(b));
+        // Mayor saldo tiene prioridad, ante empate, el menor ID va primero
+        return orden != 0 ? orden : Integer.compare(b.identificador, a.identificador);
+    });
+
+    // Comparte la formula con consultarSaldo. Recibe el usuario ya encontrado, por lo que calcula en O(1), sin la busqueda por ID que hace consultarSaldo
+    private static double saldo(Node u) {
+        return u.millasAcumuladas + u.millasRecibidas
+            - u.millasCanjeadas - u.millasTransferidas;
+    }
     Node raiz;
     Node ultimo;
     Promos promoRaiz;
@@ -35,6 +49,10 @@ public class AirMiles implements SistemaAirMiles {
     double millasAcumuladas;
     double millasCanjeadas;
     double millasTransferidas;
+    // Las recibidas aumentan el saldo, pero no el historico para categoria y maximo, arranca en 0
+    double millasRecibidas;
+    // Acceso directo a la entrada del heap, para no recorrer el arreglo para localizar al usuario cuando cambia su saldo.
+    Handle<Node> posicionHeap;
     Node hijoi;
     Node hijod;
     Node siguiente;
@@ -129,7 +147,8 @@ public class AirMiles implements SistemaAirMiles {
     }
 
     private double factorUsuario(Node usuario) {
-        double millas = usuario.millasAcumuladas - usuario.millasCanjeadas - usuario.millasTransferidas;
+        // El factor depende del historico, gastar no baja categoria y recibir no la sube
+        double millas = usuario.millasAcumuladas;
         if (0 <= millas && millas < 10000) {
             return 1;
         }
@@ -162,6 +181,7 @@ public class AirMiles implements SistemaAirMiles {
         } else {
             registrarUsuarioDesde(raiz, id);
         }
+        ultimo.posicionHeap = ranking.insertar(ultimo);
     }
 
     public void registrarUsuarioConReferidor(int id, int ref) {
@@ -184,7 +204,11 @@ public class AirMiles implements SistemaAirMiles {
                 }
             }
         }*/
+
+        ultimo.posicionHeap = ranking.insertar(ultimo);
         referidor.millasAcumuladas = referidor.millasAcumuladas + 500;
+        // El bono aumenta su saldo: reordenar al referidor que ya estaba en el heap
+        referidor.posicionHeap.modificar(referidor);
         if (referidor.millasAcumuladas > masAcumulador.millasAcumuladas) {
             masAcumulador = referidor;
         }
@@ -206,6 +230,8 @@ public class AirMiles implements SistemaAirMiles {
         } else {
             usuario.millasAcumuladas = usuario.millasAcumuladas + millasAGanar;
         }
+        // Reordenar tras acreditar el vuelo
+        usuario.posicionHeap.modificar(usuario);
         if (usuario.millasAcumuladas > masAcumulador.millasAcumuladas) {
             masAcumulador = usuario;
         }
@@ -215,7 +241,10 @@ public class AirMiles implements SistemaAirMiles {
         //throw new UnsupportedOperationException("Sin implementar");
         Node actual = encontrarUsuario(raiz, id);
         actual.millasCanjeadas = actual.millasCanjeadas + cantidad;
-        if (actual.millasCanjeadas > masCanjeador.millasCanjeadas) {
+        // El canje reduce el saldo: el usuario puede necesitar bajar en el heap
+        actual.posicionHeap.modificar(actual);
+        // El maximo gastador incluye canjes y transferencias enviadas
+        if (actual.millasCanjeadas + actual.millasTransferidas > masCanjeador.millasCanjeadas + masCanjeador.millasTransferidas) {
             masCanjeador = actual;
         }
     }
@@ -242,7 +271,16 @@ public class AirMiles implements SistemaAirMiles {
         transferidor = encontrarUsuario(actual, origen);
         transferido = encontrarUsuario(actual, destino);
         transferidor.millasTransferidas = transferidor.millasTransferidas + cantidad;
-        transferido.millasAcumuladas = transferido.millasAcumuladas + cantidad;
+        //El origen tiene menos saldo y puede necesitar bajar
+        transferidor.posicionHeap.modificar(transferidor);
+        // Enviar tambien cuenta como gasto, revisar el maximo historico en O(1)
+        if (transferidor.millasCanjeadas + transferidor.millasTransferidas
+                > masCanjeador.millasCanjeadas + masCanjeador.millasTransferidas)
+            masCanjeador = transferidor;
+        // Antes se sumaba a acumuladas, ahora se separa para no aumentar su categoria(Más cambios en consultarCategoria)i su acumulado historico, la formula de saldo si incluye estas recibidas
+        transferido.millasRecibidas = transferido.millasRecibidas + cantidad;
+        // El destino tiene mas saldo y puede necesitar subir, el handle evita buscarlo
+        transferido.posicionHeap.modificar(transferido);
         if (transferidor.exclusividad == null || transferidor.exclusividad == transferido) {
             transferidor.exclusividad = transferido;
         } else {
@@ -258,13 +296,15 @@ public class AirMiles implements SistemaAirMiles {
     public double consultarSaldo(int id) {
         //throw new UnsupportedOperationException("Sin implementar");
         Node actual = encontrarUsuario(raiz, id);
-        return (actual.millasAcumuladas - actual.millasCanjeadas - actual.millasTransferidas);
+        // La busqueda por ID ya se hizo arriba, reutilizar la cuenta incluye recibidas
+        return saldo(actual);
     }
 
     public String consultarCategoria(int id) {
         //throw new UnsupportedOperationException("Sin implementar");
         Node actual = encontrarUsuario(raiz, id);
-        double millas = actual.millasAcumuladas - actual.millasCanjeadas - actual.millasTransferidas;
+        // Este me genera dudas, recuerdo que la categoria usa el historico, hago el cambio porque es sencillo para volver a la version anterior si no es asi
+        double millas = actual.millasAcumuladas;
         if (0 <= millas && millas < 10000) {
             return "Bronce";
         }
@@ -279,7 +319,20 @@ public class AirMiles implements SistemaAirMiles {
     }
 
     public int[] rankingMillas(int n) {
-        throw new UnsupportedOperationException("Sin implementar");
+        if (n < 0) throw new IllegalArgumentException("Cantidad negativa");
+        // Si se piden mas usuarios que los existentes, devolver solo los existentes
+        int cantidad = Math.min(n, ranking.tamanio());
+        int[] resultado = new int[cantidad];
+        // Guardar referencias permite restaurar usuarios sin buscarlos por ID en el ABB
+        Node[] extraidos = new Node[cantidad];
+        // Extraer TODOS antes de reinsertar, para no seleccionar repetidamente el maximo
+        for (int i = 0; i < cantidad; i++) {
+            extraidos[i] = ranking.extraerMaximo();
+            resultado[i] = extraidos[i].identificador;
+        }
+        for (Node usuario : extraidos)
+            usuario.posicionHeap = ranking.insertar(usuario);
+        return resultado;
     }
 
     public void iniciarPromocion(String nombre, double factor) {

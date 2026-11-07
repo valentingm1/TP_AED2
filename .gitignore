@@ -1,0 +1,115 @@
+# ==============================================================================
+# STANDARD UNIVERSAL .GITIGNORE TEMPLATE
+# ==============================================================================
+# This template covers common operating system files, ubiquitous dependency 
+# directories, environmental secrets, and typical build outputs.
+# ==============================================================================
+
+# --- Operating System Files ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.Trashes
+*.icloud
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.lnk
+*.cab
+[Dd]ownloads/
+$RECYCLE.BIN/
+System Volume Information/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.trash/
+.nfs*
+
+# --- Common Language Dependencies & Managers ---
+# Node.js / JavaScript
+node_modules/
+jspm_packages/
+.npm/
+.eslintcache
+.stylelintcache
+.next/
+.nuxt/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.pytest_cache/
+
+# Java / Maven / Gradle
+target/
+*.class
+*.war
+*.ear
+*.nar
+.gradle/
+build/
+bin/
+
+# --- Environment & Sensitive Data (NEVER COMMIT) ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.pem
+*.key
+*.secret
+*.crypto
+credentials.json
+jwt.secret
+
+# --- Log Files & Databases ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.sqlite
+*.sqlite3
+*.db
+
+# --- IDEs & Editors ---
+# Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# IntelliJ / JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Text Editors / Vim
+*.swp
+*.swo
+*~
+.netrwhist
