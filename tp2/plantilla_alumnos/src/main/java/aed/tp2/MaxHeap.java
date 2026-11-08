@@ -30,13 +30,12 @@ public final class MaxHeap<T> {
     // Ocupados: [0, cantidad). La capacidad es elementos.length
     private Referencia<T>[] elementos;
     private int cantidad;
-    @SuppressWarnings("unchecked")
+
     public MaxHeap(Comparator<? super T> comparador) {
         this.comparador = comparador;
         // Java no permite crear directamente un array de Referencia<T>
         elementos = (Referencia<T>[]) new Referencia<?>[8];
     }
-    @SuppressWarnings("unchecked")
     // Duplica capacidad en O(U) conservando los indices
     private void ampliar() {
         Referencia<T>[] nuevo = (Referencia<T>[]) new Referencia<?>[elementos.length * 2];
@@ -44,7 +43,6 @@ public final class MaxHeap<T> {
         elementos = nuevo;
     }
     public int tamanio() { return cantidad; }
-    // O(log U) amortizado; O(U) si amplia el array
     public Referencia<T> insertar(T valor) {
         if (cantidad == elementos.length) ampliar();
         Referencia<T> h = new Referencia<>(valor, this);
