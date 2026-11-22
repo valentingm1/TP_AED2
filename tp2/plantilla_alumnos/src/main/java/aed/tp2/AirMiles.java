@@ -10,7 +10,7 @@ public class AirMiles implements SistemaAirMiles {
         return orden != 0 ? orden : Integer.compare(b.identificador, a.identificador);
     });
 
-    // Calcula en O(1) sobre el usuario ya localizado.
+    //Está en static para debuggear, después lo saco
     private static double saldo(Node u) {
         return u.millasAcumuladas + u.millasRecibidas
             - u.millasCanjeadas - u.millasTransferidas;

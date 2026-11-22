@@ -2,6 +2,9 @@ package aed.tp2;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+
+import java.sql.SQLOutput;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AirMilesTests {
@@ -534,5 +537,39 @@ public class AirMilesTests {
             assertFalse(visto[par[0]]);
             visto[par[0]] = visto[par[1]] = true;
         }
+    }
+
+    @Test
+    public void Insercion() {
+        MaxHeap<Integer> heap = new MaxHeap<>(Integer::compare);
+        heap.insertar(90);
+        heap.insertar(3);
+        heap.insertar(3);
+
+        System.out.println("Insercion");
+        System.out.println(heap.verMaximo() + "esperado 90");
+    }
+
+    @Test
+    public void probarExtraccion() {
+        MaxHeap<Integer> heap = new MaxHeap<>(Integer::compare);
+        heap.insertar(5);
+        heap.insertar(10);
+
+        System.out.println("Extraccion");
+        System.out.println(heap.extraerMaximo() + "sperado 10");
+        System.out.println(heap.verMaximo() + "esperado 5");
+    }
+
+    @Test
+    public void probarModificacion() {
+        MaxHeap<Integer> heap = new MaxHeap<>(Integer::compare);
+        Handle<Integer> referencia = heap.insertar(5);
+        heap.insertar(10);
+        referencia.modificar(20);
+        System.out.println("Mod");
+        System.out.println(heap.verMaximo() + "esperado 20");
+        referencia.modificar(2);
+        System.out.println(heap.verMaximo() + "esperado 10");
     }
 }

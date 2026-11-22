@@ -2,94 +2,96 @@ package aed.tp2;
 
 import java.util.Comparator;
 
-// l maximo esta en la posicion 0.
-public final class MaxHeap<T> {
-    
-    public static final class Referencia<T> implements Handle<T> {
+
+public class MaxHeap<T> {
+
+    public class Referencia implements Handle<T> {
         private T valor;
-        private final MaxHeap<T> propietario;
-        // -1 indica que el handle no esta activo.
+        // -1 indica que el handle no está activo.
         private int indice = -1;
-        private Referencia(T valor, MaxHeap<T> propietario) {
-            this.valor = valor; this.propietario = propietario;
+        private Referencia(T valor) {
+            this.valor = valor;
         }
         public T valor() { return valor; }
         // Reordena tras cambiar el valor o su prioridad
-        public void modificar(T valor) {
-            propietario.validar(this);
-            this.valor = valor;
-            propietario.actualizar(this);
+        public void modificar(T nuevoValor) {
+            this.valor = nuevoValor;
+            MaxHeap.this.actualizar(this);
         }
-        public void eliminar() { propietario.eliminar(this); }
+        public void eliminar() { MaxHeap.this.eliminar(this); }
         // Comparamos valores
         public boolean equals(Handle<T> otro) {
             return otro != null && java.util.Objects.equals(valor, otro.valor());
         }
     }
-    private final Comparator<? super T> comparador;
-    // Ocupados: [0, cantidad). La capacidad es elementos.length
-    private Referencia<T>[] elementos;
+
+    private final Comparator<T> comparador;
+
+    private Referencia[] elementos;
     private int cantidad;
 
-    public MaxHeap(Comparator<? super T> comparador) {
+    //Probablemente haya que cambiarlo con un compareTo, todavía no estoy seguro.
+    // Creo que quiere que inicie vacío el heap, ahora está el criterio de comparación en la función que crea el heap
+    public MaxHeap(Comparator<T> comparador) {
         this.comparador = comparador;
-        // Java no permite crear directamente un array de Referencia<T>
-        elementos = (Referencia<T>[]) new Referencia<?>[8];
+        elementos = new MaxHeap.Referencia[8];
     }
-    // Duplica capacidad en O(U) conservando los indices
+    //Lo casteo porque si no me tira error de array genérico/si pongo MaxHeap<> sin nada entre los <> me tira illegal start of type
     private void ampliar() {
-        Referencia<T>[] nuevo = (Referencia<T>[]) new Referencia<?>[elementos.length * 2];
+        Referencia[] nuevo =
+                (Referencia[]) new MaxHeap<?>.Referencia[elementos.length * 2];
         for (int i = 0; i < cantidad; i++) nuevo[i] = elementos[i];
         elementos = nuevo;
     }
+
+
     public int tamanio() { return cantidad; }
-    public Referencia<T> insertar(T valor) {
+
+
+    public Referencia insertar(T valor) {
         if (cantidad == elementos.length) ampliar();
-        Referencia<T> h = new Referencia<>(valor, this);
+        Referencia h = new Referencia(valor);
         h.indice = cantidad;
         elementos[cantidad++] = h;
         subir(h.indice);
         return h;
     }
-    // Extrae la raiz en O(log U) e invalida su handle
+    
     public T extraerMaximo() {
         if (cantidad == 0) throw new IllegalStateException("Heap vacio");
-        Referencia<T> h = elementos[0];
+        Referencia h = elementos[0];
         eliminar(h);
         return h.valor;
     }
-    // Verifica pertenencia y posicion vigente en O(1).
-    private void validar(Referencia<T> h) {
-        if (h == null || h.propietario != this || h.indice < 0
-                || h.indice >= cantidad || elementos[h.indice] != h)
-            throw new IllegalArgumentException("Handle invalido");
+
+    // Lo uso para debuggear, después lo borro
+    public T verMaximo() {
+        if (cantidad == 0) throw new IllegalStateException("Heap vacio");
+        return (T) elementos[0].valor;
     }
-    private void eliminar(Referencia<T> h) {
-        validar(h);
-        int i = h.indice;
-        // Reemplaza la entrada por la ultima para no dejar huecos
+
+    private void eliminar(Referencia referencia) {
+        int i = referencia.indice;
         intercambiar(i, cantidad - 1);
-        // Conserva capacidad para reinsertar el ranking sin ampliar
         elementos[--cantidad] = null;
-        h.indice = -1;
+        referencia.indice = -1;
         if (i < cantidad) actualizar(elementos[i]);
     }
-    // Reordena en O(log U); solo una prioridad debe haber cambiado
-    public void actualizar(Referencia<T> h) {
-        validar(h);
-        int i = h.indice;
+
+
+    public void actualizar(Referencia referencia) {
+        int i = referencia.indice;
         if (i > 0 && mayor(i, (i - 1) / 2)) subir(i);
         else bajar(i);
     }
     private boolean mayor(int a, int b) {
-        return comparador.compare(elementos[a].valor, elementos[b].valor) > 0;
+        return comparador.compare( elementos[a].valor, elementos[b].valor) > 0;
     }
     private void intercambiar(int a, int b) {
-        Referencia<T> aux = elementos[a]; elementos[a] = elementos[b]; elementos[b] = aux;
-        // Mantiene los handles sincronizados con el array
+        Referencia aux = elementos[a]; elementos[a] = elementos[b]; elementos[b] = aux;
         elementos[a].indice = a; elementos[b].indice = b;
     }
-    // Sube mientras supere al padre
+
     private void subir(int i) {
         while (i > 0) {
             int padre = (i - 1) / 2;
@@ -97,14 +99,15 @@ public final class MaxHeap<T> {
             intercambiar(i, padre); i = padre;
         }
     }
-    // Baja intercambiando con el hijo de mayor prioridad
+
     private void bajar(int i) {
         while (i < cantidad / 2) {
-            // Hijos: 2*i+1 y 2*i+2
             int hijo = 2 * i + 1;
             if (hijo + 1 < cantidad && mayor(hijo + 1, hijo)) hijo++;
             if (!mayor(hijo, i)) return;
             intercambiar(i, hijo); i = hijo;
         }
     }
+
+
 }
