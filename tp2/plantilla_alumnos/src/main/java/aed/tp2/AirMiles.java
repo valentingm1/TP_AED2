@@ -5,16 +5,22 @@ public class AirMiles implements SistemaAirMiles {
     //Los usuarios es un ABB para agregarlos, con un heap para tenerlos en orden?
     //las promocioes son ???
     //seria conveniente guardar a los mas acumuladores y canjeadores como un atributo aparte? considerando que nos piden complejidad 1 por lo que no los podemos busacar en un arbol
-    ABBUsuarios arbol;
-    TriePromociones trie;
+    ABBUsuarios<Usuario> arbol;
+    TriePromociones<Promocion> trie;
+    Usuario masAcumulador;
+    Usuario masCanjeador;
 
     public AirMiles() {
         arbol = new ABBUsuarios();
         trie = new TriePromociones();
+        masAcumulador = null;
+        masCanjeador = null;
+        Promocion promo = new Promocion(1, false, 0);
+        trie.agregarPalabra("NoPromo", promo);
     }
 
-    private double factorUsuario(Usuario usuario) {
-        double millas = usuario.millasAcumuladas - usuario.millasCanjeadas - usuario.millasTransferidas;
+    private double factorUsuario(Usuario actual) {
+        double millas = actual.devolverMillasAcumuladas() - actual.devolverMillasCanjeadas() - actual.devolverMillasTransferidas();
         if (0 <= millas && millas < 10000) {
             return 1;
         }
@@ -29,78 +35,88 @@ public class AirMiles implements SistemaAirMiles {
 
 
     public void registrarUsuario(int id) {
-        arbol.agregarUsuario(id);
+        Usuario nuevo = new Usuario(id);
+        if (arbol.cardinal() == 0) { //Si nuevo es el primer usuario del sistema, lo asigna como mas acumulador y mas canjeador
+            masAcumulador = nuevo;
+            masCanjeador = nuevo;
+        }
+        arbol.insertar(nuevo);
     }
 
     public void registrarUsuarioConReferidor(int id, int ref) {
-        arbol.agregarUsuario(id);
-        Usuario nuevo = arbol.devolverUsuario(id);
-        Usuario referidor = arbol.devolverUsuario(ref);
-        referidor.millasAcumuladas = referidor.millasAcumuladas + 500;
-        nuevo.millasAcumuladas = 500;
-        if (referidor.millasAcumuladas > arbol.millasMasAcumulador()) {
-            arbol.nuevoMasAcumulador(referidor);
+        Usuario nuevo = new Usuario(id);
+        arbol.insertar(nuevo);
+        Usuario referidor = new Usuario(ref); //Creo un usuario temporal con el mismo id del referidor para poder buscarlo en el arbol. Es la única manera que encontré de buscar un usuario por id int en una clase genérica
+        referidor = arbol.devolver(referidor);
+        nuevo = arbol.devolver(nuevo);
+
+        referidor.sumarMillasAcumuladas(500);
+        nuevo.sumarMillasAcumuladas(id);
+        if (referidor.devolverMillasAcumuladas() > masAcumulador.devolverMillasAcumuladas()) {
+            masAcumulador = referidor;
         }
     }
 
     public void acumularMillas(int id, double distancia, String nombrePromo) {
-        Usuario actual = arbol.devolverUsuario(id);
-        Promocion promo = trie.devolvePromocion(nombrePromo);
+        Usuario actual = new Usuario(id);
+        actual = arbol.devolver(actual);
+        Promocion promo = trie.devolverPalabra(nombrePromo);
         double factorU = factorUsuario(actual);
-        double millasAGanar = distancia * factorU * promo.factor;
-        if (promo.conTope == true) {
-            if (millasAGanar <= promo.tope) {
-                actual.millasAcumuladas = actual.millasAcumuladas + millasAGanar;
-                promo.tope = promo.tope - millasAGanar;
+        double millasAGanar = distancia * factorU * promo.devovlerFactor();
+        if (promo.devolverConTope() == true) {
+            if (millasAGanar <= promo.devovlerTope()) {
+                actual.sumarMillasAcumuladas(millasAGanar);
+                promo.bajarTope(millasAGanar);
             } else {
-                actual.millasAcumuladas = actual.millasAcumuladas + distancia * factorU;
+                actual.sumarMillasAcumuladas(distancia * factorU);
             }
         } else {
-            actual.millasAcumuladas = actual.millasAcumuladas + millasAGanar;
+            actual.sumarMillasAcumuladas(millasAGanar);
         }
-        if (actual.millasAcumuladas > arbol.millasMasAcumulador()) {
-            arbol.nuevoMasAcumulador(actual);
+        if (actual.devolverMillasAcumuladas() > masAcumulador.devolverMillasAcumuladas()) {
+            masAcumulador = actual;
         }
     }
 
     public void canjearMillas(int id, double cantidad) {
-        Usuario actual = arbol.devolverUsuario(id);
-        actual.millasCanjeadas = actual.millasCanjeadas + cantidad;
-        if (actual.millasCanjeadas + actual.millasTransferidas > arbol.millasMasCanjeador()) {
-            arbol.nuevoMasCanjeador(actual);
+        Usuario actual = new Usuario(id);
+        actual = arbol.devolver(actual);
+        actual.sumarMillasCanjeadas(cantidad);
+        if (actual.devolverMillasCanjeadas() + actual.devolverMillasTransferidas() > masCanjeador.devolverMillasCanjeadas() + masCanjeador.devolverMillasTransferidas()) {
+            masCanjeador = actual;
         }
     }
 
     public void transferirMillas(int origen, int destino, double cantidad) {
-        Usuario transferidor;
-        Usuario transferido;
-        transferidor = arbol.devolverUsuario(origen);
-        transferido = arbol.devolverUsuario(destino);
-        transferidor.millasTransferidas = transferidor.millasTransferidas + cantidad;
-        transferido.millasAcumuladas = transferido.millasAcumuladas + cantidad;
-        if (transferidor.exclusividad == null || transferidor.exclusividad == transferido) {
-            transferidor.exclusividad = transferido;
+        Usuario transferidor = new Usuario(origen);
+        Usuario transferido = new Usuario(destino);
+        transferidor = arbol.devolver(transferidor);
+        transferido = arbol.devolver(transferido);
+        transferidor.sumarMillasTransferidas(cantidad);
+        transferido.sumarMillasAcumuladas(cantidad);        
+        if (transferidor.devolverExclusividad() == null || transferidor.devolverExclusividad() == transferido) {
+            transferidor.exclusivo(transferido);
         } else {
-            transferidor.exclusividad = transferidor;
+            transferidor.noExclusivo();
         }
-        if (transferido.exclusividad == null || transferido.exclusividad == transferidor) {
-            transferido.exclusividad = transferidor;
-        } else {
-            transferido.exclusividad = transferido;
+        if (transferido.devolverExclusividad() == null || transferido.devolverExclusividad() == transferidor) {
+            transferido.exclusivo(transferidor);
         }
-        if (transferidor.millasCanjeadas + transferidor.millasTransferidas > arbol.millasMasCanjeador()) {
-            arbol.nuevoMasCanjeador(transferidor);
+        if (transferidor.devolverMillasCanjeadas() + transferidor.devolverMillasTransferidas() > masCanjeador.devolverMillasCanjeadas() + masCanjeador.devolverMillasTransferidas()) {
+            masCanjeador = transferidor;
         }
     }
 
     public double consultarSaldo(int id) {
-        Usuario actual = arbol.devolverUsuario(id);
-        return (actual.millasAcumuladas - actual.millasCanjeadas - actual.millasTransferidas);
+        Usuario actual = new Usuario(id);
+        actual = arbol.devolver(actual);
+        return (actual.devolverMillasAcumuladas() - actual.devolverMillasCanjeadas() - actual.devolverMillasTransferidas());
     }
 
     public String consultarCategoria(int id) {
-        Usuario actual = arbol.devolverUsuario(id);
-        double millas = actual.millasAcumuladas - actual.millasCanjeadas - actual.millasTransferidas;
+        Usuario actual = new Usuario(id);
+        actual = arbol.devolver(actual);
+        double millas = (actual.devolverMillasAcumuladas() - actual.devolverMillasCanjeadas() - actual.devolverMillasTransferidas());
         if (0 <= millas && millas < 10000) {
             return "Bronce";
         }
@@ -118,28 +134,30 @@ public class AirMiles implements SistemaAirMiles {
     }
 
     public void iniciarPromocion(String nombre, double factor) {
-        trie.agregarPromocionSinTope(nombre, factor);
+        Promocion promo = new Promocion(factor, false, 0);
+        trie.agregarPalabra(nombre, promo);
     }
 
     public void iniciarPromocionConTope(String nombre, double factor, double tope) {
-        trie.agregarPromocionConTope(nombre, factor, tope);
+        Promocion promo = new Promocion(factor, true, tope);
+        trie.agregarPalabra(nombre, promo);
     }
 
     public void finalizarPromocion(String nombre) {
-        trie.eliminarPromocion(nombre);
+        trie.eliminarPalabra(nombre);
     }
 
     public int elMasAcumulador() {
-        return arbol.idMasAcumulador();
+        return masAcumulador.devolverIdentificador();
     }
 
     public int elMasCanjeador() {
-        return arbol.idMasCanjeador();
+        return masCanjeador.devolverIdentificador();
     }
 
     private boolean hayExclusividad(Usuario actual) {
-        if (actual.exclusividad != null && actual.exclusividad != actual) {
-            if (actual.exclusividad.exclusividad == actual && actual.identificador < actual.exclusividad.identificador) {
+        if (actual.devolverExclusividad() != null && actual.devolverExclusividad() != actual) {
+            if (actual.devolverExclusividad().devolverExclusividad() == actual && actual.devolverIdentificador() < actual.devolverExclusividad().devolverIdentificador()) {
                 return true;
             }
         }
@@ -153,13 +171,13 @@ public class AirMiles implements SistemaAirMiles {
         int[][] temp = new int[cantidadtotal][2];
         int[][] res;
         int cantidadpares = 0;
-        ABBUsuarios.ABBUsuarios_Iterador iter = arbol.iterador();
+        ABBUsuarios<Usuario>.ABBUsuarios_Iterador iter = arbol.iterador();
         if (arbol.cardinal() != 0) {
             while (iter.haySiguiente() == true) {
                 actual = iter.siguiente();
                 if (hayExclusividad(actual) == true) {
-                    temp[cantidadpares][0] = actual.identificador;
-                    temp[cantidadpares][1] = actual.exclusividad.identificador;
+                    temp[cantidadpares][0] = actual.devolverIdentificador();
+                    temp[cantidadpares][1] = actual.devolverExclusividad().devolverIdentificador();
                     cantidadpares = cantidadpares + 1;
                 }
             }

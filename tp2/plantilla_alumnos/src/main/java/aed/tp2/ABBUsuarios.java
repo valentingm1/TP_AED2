@@ -1,77 +1,45 @@
 package aed.tp2;
 
-public class ABBUsuarios {
-    private Usuario raiz; //El primer usuario en ser agregado al árbol. Si no hay usuarios, es null
-    private int cantidad; //Cantidad de usuarios total. Se usa para el iterador
-    private Usuario masAcumulador; //Guarda el usuario que más millas acumuló
-    private Usuario masCanjeador; //Guarda el usuario que más millas canjeó. Ojo que son las canjeadas más las transferidas
+public class ABBUsuarios<T extends Comparable<T>> {
+    private Nodo raiz; //Nodo raiz. Es el principio del ABB
+    private int cantidad; //Cantidad de nodos en total. Se usa para el iterador
+
+    private class Nodo {
+        T valor; //Puede ser cualquier tipo de dato siempre y cuando sea comparable
+        Nodo padre; //Padre del nodo. Si es la raiz, es null
+        Nodo hijoi; //Hijo izquierdo
+        Nodo hijod; //Hijo derecho
+
+        Nodo (T data) { //Creo un nodo nuevo que contiene un dato T. Su padre e hijos son nulos hasta ubicarlo en el arbol
+            this.valor = data;
+            this.hijod = null;
+            this.hijoi = null;
+            this.padre = null;
+        }
+    }
+
 
     public ABBUsuarios() { //Lo inicializo vacío. Las variables que guardan usuarios son null
         raiz = null;
         cantidad = 0;
-        masAcumulador = null;
-        masCanjeador = null;
     }
 
     public int cardinal() { //Devuelve la cantidad de usuarios. Solo la uso en el iterador. Podría usarla para verificar si la raiz es null, quedaría más prolijo. Después veo
         return cantidad;
     }
 
-    public double millasMasAcumulador() { //Devuelve la cantidad de millas del más acumulador. Si es null, devuelve -1. ¿Por qué? Si queremos saber las millas del más acumulador, es porque queremos ver si hay que reemplazarlo. Si devuelvo -1, no importa con quién lo compare, ese se va a convertir en el más acumulador
-        if (masAcumulador != null) {
-            return masAcumulador.millasAcumuladas;
-        } else {
-            return -1;
-        }
-    }
-
-    public int idMasAcumulador() { //Devuelve el id del más acumulador. Mismo principio que el anterior
-        if (masAcumulador != null) {
-            return masAcumulador.identificador;
-        } else {
-            return -1;
-        }
-    }
-
-    public void nuevoMasAcumulador(Usuario nuevo){ //Reemplaza al más acumulador por el parámetro
-        masAcumulador = nuevo;
-    }
-    
-    //Los siguientes 3 son iguales a los 3 anteriores, pero para el más canjeador
-    public double millasMasCanjeador() {
-        if (masCanjeador != null) {
-            return (masCanjeador.millasCanjeadas + masCanjeador.millasTransferidas); //Ojo que se piden millas canjeadas y transferidas. Confuso
-        } else {
-            return -1;
-        }
-    }
-    
-    public int idMasCanjeador() {
-        if (masCanjeador != null) {
-            return masCanjeador.identificador;
-        } else {
-            return -1;
-        }
-    }
-
-    public void nuevoMasCanjeador(Usuario nuevo){
-        masCanjeador = nuevo;
-    }
-
-    public void agregarUsuario(int id) { //Agrega un usuario nuevo al ABB. Se basa en su id para decidir su posición 
+    public void insertar(T nuevo) { //Agrega un usuario nuevo al ABB. Se basa en su id para decidir su posición 
         if (raiz == null) {
-            raiz = new Usuario(id);
-            masAcumulador = raiz;
-            masCanjeador = raiz;
+            raiz = new Nodo(nuevo);
         } else {
             boolean romper = false;
-            Usuario actual = raiz;
+            Nodo actual = raiz;
             while (!romper) {
-                if (id > actual.identificador) {
+                if (nuevo.compareTo(actual.valor) < 0) {
                     if (actual.hijod != null) {
                         actual = actual.hijod;
                     } else {
-                        actual.hijod = new Usuario(id);
+                        actual.hijod = new Nodo(nuevo);
                         actual.hijod.padre = actual;
                         romper = true;
                     }
@@ -79,7 +47,7 @@ public class ABBUsuarios {
                     if (actual.hijoi != null) {
                         actual = actual.hijoi;
                     } else {
-                        actual.hijoi = new Usuario(id);
+                        actual.hijoi = new Nodo(nuevo);
                         actual.hijoi.padre = actual;
                         romper = true;
                     }
@@ -89,13 +57,15 @@ public class ABBUsuarios {
         cantidad = cantidad + 1;
     }
 
-    public Usuario devolverUsuario(int id) { //Busca el usuario dentro del ABB y lo devuelve
-        Usuario actual = raiz;
+    public T devolver(T id) { //Busca el nodo dentro del ABB y devuelve el dato T
+        Nodo actual = raiz;
         while (true) {
-            if (actual.identificador == id) {
-                return actual;
+            //if (actual.identificador == id) {
+            if (actual.valor.compareTo(id) == 0){
+                return actual.valor;
             } else {
-                if (id > actual.identificador) {
+                //if (id > actual.identificador) {
+                if (actual.valor.compareTo(id) > 0) {
                     actual = actual.hijod;                    
                 } else {
                     actual = actual.hijoi;
@@ -107,7 +77,7 @@ public class ABBUsuarios {
 
 
     public class ABBUsuarios_Iterador {
-        private Usuario _actual;
+        private Nodo _actual;
         private int contadoriterador;
 
         public ABBUsuarios_Iterador() {
@@ -124,8 +94,8 @@ public class ABBUsuarios {
             return contadoriterador < cantidad;
         }
     
-        public Usuario siguiente() {
-            Usuario sig;
+        public T siguiente() {
+            Nodo sig;
             if (_actual == null) {
                 return null;
             }
@@ -144,7 +114,7 @@ public class ABBUsuarios {
                 }
             }
             contadoriterador = contadoriterador + 1;
-            return sig;       
+            return sig.valor;       
         }
     }
 

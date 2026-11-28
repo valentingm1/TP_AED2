@@ -1,19 +1,31 @@
 package aed.tp2;
 
 public class Promocion {
-        boolean esPromo; //Si existe una promoción en esta posición del trie, es true
-        double factor;
-        boolean conTope; //Si es true, la promocion tiene tope y se tiene en cuenta el valor de tope
-        double tope;
-        Promocion[] hijos;
-        Promocion padre;
+    private double factor;
+    private boolean conTope; //Si es true, la promocion tiene tope y se tiene en cuenta el valor de tope
+    private double tope;
 
-            Promocion() {
-                hijos = new Promocion[58]; //Mayusculas, minusculas y los caracteres entre ambas. Sin ñ ni acentos
-                esPromo = false;
-                factor = 0;
-                conTope = false;
-                tope = 0;
-                padre = null;
-            }
+    Promocion(double a, boolean b, double c) { //Me gustaría darles mejores nombres, pero soo se usan una vez y no quiero terminar con algo como "factor = factor"
+        factor = a;
+        conTope = b;
+        tope = c;
+    }
+
+    public double devovlerFactor() {
+        return factor;
+    }
+
+    public boolean devolverConTope() {
+        return conTope;
+    }
+    
+    public double devovlerTope() {
+        return tope;
+    }
+
+    public void bajarTope(double millas) {
+        tope = tope - millas;
+    }
+
+
 }
