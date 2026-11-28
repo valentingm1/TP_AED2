@@ -1,6 +1,6 @@
 package aed.tp2;
 
-public class TriePromociones<T> {
+public class Trie<T> {
     private Nodo raiz; //El inicio del trie
 
     private class Nodo {
@@ -17,7 +17,7 @@ public class TriePromociones<T> {
         }
     }
 
-    public TriePromociones() {
+    public Trie() {
         raiz = new Nodo(null); //El null es el valor almacenado en el nodo, no el nodo en sí
     }
 

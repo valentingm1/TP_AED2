@@ -5,14 +5,14 @@ public class AirMiles implements SistemaAirMiles {
     //Los usuarios es un ABB para agregarlos, con un heap para tenerlos en orden?
     //las promocioes son ???
     //seria conveniente guardar a los mas acumuladores y canjeadores como un atributo aparte? considerando que nos piden complejidad 1 por lo que no los podemos busacar en un arbol
-    ABBUsuarios<Usuario> arbol;
-    TriePromociones<Promocion> trie;
+    ABB<Usuario> arbol;
+    Trie<Promocion> trie;
     Usuario masAcumulador;
     Usuario masCanjeador;
 
     public AirMiles() {
-        arbol = new ABBUsuarios();
-        trie = new TriePromociones();
+        arbol = new ABB();
+        trie = new Trie();
         masAcumulador = null;
         masCanjeador = null;
         Promocion promo = new Promocion(1, false, 0);
@@ -171,7 +171,7 @@ public class AirMiles implements SistemaAirMiles {
         int[][] temp = new int[cantidadtotal][2];
         int[][] res;
         int cantidadpares = 0;
-        ABBUsuarios<Usuario>.ABBUsuarios_Iterador iter = arbol.iterador();
+        ABB<Usuario>.ABB_Iterador iter = arbol.iterador();
         if (arbol.cardinal() != 0) {
             while (iter.haySiguiente() == true) {
                 actual = iter.siguiente();

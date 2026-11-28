@@ -1,6 +1,6 @@
 package aed.tp2;
 
-public class ABBUsuarios<T extends Comparable<T>> {
+public class ABB<T extends Comparable<T>> {
     private Nodo raiz; //Nodo raiz. Es el principio del ABB
     private int cantidad; //Cantidad de nodos en total. Se usa para el iterador
 
@@ -19,7 +19,7 @@ public class ABBUsuarios<T extends Comparable<T>> {
     }
 
 
-    public ABBUsuarios() { //Lo inicializo vacío. Las variables que guardan usuarios son null
+    public ABB() { //Lo inicializo vacío. Las variables que guardan usuarios son null
         raiz = null;
         cantidad = 0;
     }
@@ -76,11 +76,11 @@ public class ABBUsuarios<T extends Comparable<T>> {
 
 
 
-    public class ABBUsuarios_Iterador {
+    public class ABB_Iterador {
         private Nodo _actual;
         private int contadoriterador;
 
-        public ABBUsuarios_Iterador() {
+        public ABB_Iterador() {
             _actual = raiz;
             contadoriterador = 0;
             if (_actual != null) {
@@ -118,8 +118,8 @@ public class ABBUsuarios<T extends Comparable<T>> {
         }
     }
 
-    public ABBUsuarios_Iterador iterador() {
-        return new ABBUsuarios_Iterador();
+    public ABB_Iterador iterador() {
+        return new ABB_Iterador();
     }
 
 }
